@@ -1,5 +1,32 @@
 # Evidence and methodology
 
+## Version 0.2 optimized experiments
+
+`optimization-round2.json` retains measurements from the local optimized adapter,
+including final fresh-process math/copy validation. Local paths were removed
+recursively; prompts are synthetic. Hashes refer to the measured local source.
+Public packaging changes namespace, CLI routing and diagnostic labels; its checks
+are in `optimized-package-validation.json`.
+
+The public optimized package passed CPU/CLI, real-expert/template/cache-pressure
+CUDA checks and wheel build. Seven numerical core modules are AST-identical to
+the measured adapter after normalizing diagnostic labels, and profile defaults match.
+Its attempted full-model rerun was interrupted because the user's pre-existing
+interactive GLM occupied the same GPU/RAM. Only the benchmark was stopped; no
+successful public-package rerun or throughput is claimed. Local successful runs
+remain separately identified rather than relabeled as package measurements.
+
+Final local copy: 169 tokens, 1.166839 tokens/s, 144.8358 s decode, 318.2392 s total,
+264.9253 s first output. All token IDs matched the reference. Visible output alone
+is 1.159934 tokens/s; total-request throughput is 0.531. Arithmetic: 0.305689 tokens/s.
+Neither is a general model benchmark. Decode time includes EOS compute, excludes
+prompt processing; EOS is excluded from the output count. Background/cache budgets varied.
+
+Code/math/count/followup, lower-performing variants and unexplained count pauses
+are retained. `optimized-oracle.txt` records development checks with paths redacted.
+
+## Historical version 0.1 evidence
+
 `rtx3080-glm53.json` is the anonymized original full-model report. Only the local
 model-directory path was removed; hardware, package versions, checkpoint revision
 and provenance were added. Numeric measurements are unchanged. Prompt and answer

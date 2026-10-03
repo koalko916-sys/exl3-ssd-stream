@@ -2,160 +2,136 @@
 
 [![CPU checks](https://github.com/koalko916-sys/exl3-ssd-stream/actions/workflows/checks.yml/badge.svg)](https://github.com/koalko916-sys/exl3-ssd-stream/actions/workflows/checks.yml)
 
-**Experimental:** run a GLM EXL3 checkpoint larger than RAM and VRAM by loading
-linear weights from an SSD on demand, using ExLlamaV3's CUDA kernels.
+Experimental SSD streaming for a GLM EXL3 checkpoint larger than RAM and VRAM,
+using **ExLlamaV3's architecture, quantization and CUDA kernels**.
 
 [Русская инструкция](docs/README.ru.md) · [Architecture](docs/ARCHITECTURE.md) ·
-[Measured results](benchmarks/README.md)
+[Measurements](benchmarks/README.md) · [Optimization details](docs/OPTIMIZATION.md)
 
-Verified with **Infatoshi/GLM-5.3-UNCENSORED-EXL3-3.0bpw**, a 273 GiB checkpoint,
-on **Windows, one RTX 3080 10 GiB, Ryzen 5 7500F and 16 GiB system RAM**.
-The complete model answered a prompt. It was slow: **0.073 tokens/s**.
-This is a capacity experiment, not a claim of practical chat speed or optimal performance.
+Verified with **Infatoshi/GLM-5.3-UNCENSORED-EXL3-3.0bpw**, a **273 GiB / 753B**
+checkpoint, on **Windows, RTX 3080 10 GiB, Ryzen 5 7500F and 16 GiB RAM**.
+Weights are unchanged: no expert pruning, new quantization or smaller replacement model.
 
-## What this adds
+**v0.2.0:** optional Windows direct SSD reads, expert prefetch/cache, verified MTP8
+and prompt lookup. An installed local run reached **1.167 tokens/s on exact copying**
+of existing input text (169 output tokens). **This is not a general 1 token/s claim.**
+Ordinary test prompts measured about **0.21–0.40 tokens/s**. Long waits remain.
 
-- On-demand linear weight loading without converting the EXL3 checkpoint.
-- A bounded permanent GPU cache for non-routed matrices.
-- An optional bounded pinned RAM cache for non-routed EXL3 matrices.
-- Routed experts loaded as needed and released after computation.
-- Published GLM chat template, greedy decoding, finite-logit checks and JSON metrics.
-- Resident-versus-streamed CUDA oracles for dense, MoE, MLA and DSA computations.
+## Quick start on Windows
 
-**ExLlamaV3 provides the architecture, EXL3 quantization and CUDA kernels.** This
-project supplies the loading and cache adapter. It began as an experiment beside
-a local WARP checkout, but runs independently of WARP and does not modify its C engine.
-It does not invent a new quantization or make all 753B parameters resident.
-
-## Quick start: verified Windows environment
-
-Requirements: Python 3.13, an NVIDIA CUDA GPU and a driver compatible with CUDA 12.8.
-The reference machine had a 10 GiB GPU. Smaller GPUs and other operating systems
-have not been validated. Allow roughly 310 GiB free SSD space for the model,
-runtime and headroom; the weights alone occupy 272.66 GiB.
+Requirements: Python 3.13, NVIDIA CUDA GPU and a driver compatible with CUDA 12.8.
+Allow roughly 310 GiB free SSD space for weights, runtime and headroom.
+The verified machine had a 10 GiB GPU; smaller GPUs have not been validated.
 
 ```powershell
 git clone https://github.com/koalko916-sys/exl3-ssd-stream.git
 cd exl3-ssd-stream
 powershell -NoProfile -File scripts/install-windows.ps1
-```
-
-The installer creates a local `.venv`, installs PyTorch 2.10.0 CUDA 12.8, the official
-ExLlamaV3 1.5.3 CPython 3.13 Windows wheel and this package. It does not download weights.
-
-Download the exact checkpoint to an SSD with sufficient space:
-
-```powershell
 .venv\Scripts\hf.exe download Infatoshi/GLM-5.3-UNCENSORED-EXL3-3.0bpw --revision d06b4f42db97c8bb7a8f72e819b979f132e4a721 --local-dir E:\models\glm53-exl3
+.venv\Scripts\python.exe -m exl3_ssd_stream --optimized --mtp 8 --model E:\models\glm53-exl3 --context 2048 --tokens 256 --prompt "What is 2 + 2? Answer briefly." --report benchmark-exl3.json
+.venv\Scripts\python.exe -m exl3_ssd_stream --optimized --mtp 8 --model E:\models\glm53-exl3 --interactive --context 2048 --tokens 256 --report last-response.json
 ```
 
-Run a short prompt, then use the persistent interactive session:
+The installer creates `.venv` and installs PyTorch 2.10.0 CUDA 12.8, the official
+ExLlamaV3 1.5.3 CPython 3.13 Windows wheel and this adapter. It does not download weights.
+To update an existing clone: `git pull`, then `.venv\Scripts\python.exe -m pip install -e .`.
 
-```powershell
-.venv\Scripts\python.exe -m exl3_ssd_stream --model E:\models\glm53-exl3 --prompt "What is 2 + 2? Answer briefly." --tokens 256 --report benchmark-exl3.json
-.venv\Scripts\python.exe -m exl3_ssd_stream --model E:\models\glm53-exl3 --interactive --context 2048 --tokens 256 --report last-response.json
-```
+`/new` clears history; `exit` closes the engine. Use only one engine per GPU.
+Responses can take several minutes. Copied fragments appear in blocks after full
+target verification. Incomplete reasoning is not added to history. `--context` must
+be a positive multiple of 256; `--tokens` must be smaller than the context.
 
-In chat, `/new` clears history; `exit` closes the engine. Older complete turns are
-dropped when context fills. `--context` must be a positive multiple of 256.
-Use Ctrl+C to interrupt a slow run. Incomplete reasoning is not counted as a final
-answer or added to chat history.
+Omit `--optimized` to retain the original v0.1 loading path. The optimized path uses
+Win32 direct I/O and is **Windows-only**. Linux inference for the original adapter
+remains untested; install a compatible upstream CUDA environment first.
+`--help` and CPU tests work without importing GPU dependencies. WARP is not required.
 
-For Linux, first install a compatible CUDA PyTorch/ExLlamaV3 environment using the
-[upstream instructions](https://github.com/turboderp-org/exllamav3), then `pip install -e .`.
-The adapter is portable Python, but Linux inference is **untested** here.
-`python -m exl3_ssd_stream --help` works without importing GPU dependencies.
+## What changed
+
+- Grouped expert reads, two bounded prefetch workers and explicitly freed pinned buffers.
+- Bounded GPU/RAM caches, dynamic frequency-based expert replacement and MTP GPU priority.
+- Disk-backed embedding row reads and a lighter renderer of the official chat template.
+- Exact-prefix KV reuse across complete chat turns.
+- Full-model verification of MTP and prompt/history lookup, including hybrid bootstrap.
+- Memory-pressure guards; rejected proposals never become unverified output.
+
+The adapter runs independently of WARP and does not modify its C engine. It does
+not make the complete model resident. ExLlamaV3 supplies the inference kernels.
+
+## Measured results
+
+Individual runs on the reference PC, not stable throughput guarantees:
+
+| Test | Mode | Output tokens | Decode tokens/s | Full request |
+|---|---|---:|---:|---:|
+| Short arithmetic, historical v0.1 | Original adapter | 8 | 0.073 | 252 s |
+| Exact short copy | Previous local MTP8 | 75 | 0.296 | 350 s |
+| Same short copy, identical token IDs | Hybrid MTP + lookup | 75 | 1.008 | 169 s |
+| Long exact copy, installed local profile | Hybrid MTP + lookup | 169 | **1.167** | **318 s** |
+| Short arithmetic, installed local profile | MTP8 | 8 | 0.306 | 73 s |
+
+Long-copy first output appeared at **265 s**; decoding took **145 s**. Its 168 visible
+tokens also exceeded 1 token/s (**1.160**). Rates count non-EOS output tokens, including
+the reasoning-close marker, and include EOS computation in decode time. They exclude
+prompt processing and model initialization. Large blocks improve completion time
+but can delay first output. Total-request throughput for this copy is only 0.531 tokens/s.
+
+All long-copy token IDs matched the development reference. Automatic RAM budgets
+and background load varied; these are combined configuration results, not isolated
+algorithm speedups. Copying favors lookup because it reuses the prompt. Novel output
+usually has less draft acceptance; universal 1 token/s has not been reached.
+
+[Raw evidence](benchmarks/optimization-round2.json) retains successful and unsuccessful
+experiments, prompts, outputs, cache budgets, TTFT and timings. It describes the local
+adapter before public namespace packaging. [Public package validation](benchmarks/optimized-package-validation.json)
+records checks of the packaged code. Historical evidence is retained separately.
 
 ## Memory controls
 
-| Option | Default behavior |
-|---|---|
-| `--cache-gib -1` | Choose from free VRAM after initial model load, keeping a 1.5 GiB reserve |
-| `--cache-gib 0` | Disable the permanent linear-weight GPU cache |
-| `--host-cache-gib -1` | Choose up to 2 GiB from available RAM, leaving 4 GiB at selection time |
-| `--host-cache-gib 0` | Disable the pinned RAM weight cache |
+Profile defaults apply only when the corresponding environment variable is absent.
+`--cache-gib` and `--host-cache-gib` override automatic cache selection: -1 selects
+automatically, 0 disables that weight cache. Budgets cover cached weights, not total
+process memory; automatic reserves are heuristics rather than an OOM guarantee.
 
-These budgets cover cached linear weights, **not total process/GPU memory**.
-Embeddings, routers, norms, MLA weights, KV cache and temporary matrices also need
-memory. Automatic reserves are heuristics, not an OOM guarantee. Explicit budgets
-are useful when other applications occupy memory. Close large GPU applications
-before running. The reference run selected 4.90 GiB of GPU cache and zero RAM cache.
-
-Run only one model process on this GPU. During package validation, an already-open
-interactive GLM occupied about 8.3 GiB dedicated VRAM. Concurrent full-model reruns
-became much slower and were stopped; no throughput claim is made for them.
-Reducing the cache did not resolve that contention. Keep the GPU available for
-one engine before comparing timings.
-
-## Actual result
-
-Prompt: `What is 2 + 2? Answer briefly.` Answer: `2 + 2 = 4`.
-
-| Metric | One measured run, 2026-10-03 |
+| Optimized setting | Default |
 |---|---:|
-| Generated tokens, including the reasoning-close marker | 8 |
-| Decode time, including the final EOS forward | 110.13 s |
-| Output tokens / decode time | 0.07264 tokens/s |
-| Time to first token after generation started | 155.71 s |
-| Full request, excluding environment/model startup | 252.11 s |
-| Peak allocated VRAM | 8.46 GiB |
-| Peak reserved VRAM | 8.65 GiB |
-| Peak process working RAM | 3.64 GiB |
+| `--mtp` | 8; use 0 for serial generation |
+| `GLM_NGRAM_WINDOW` | 128; use 0 to disable lookup |
+| `GLM_PREFETCH_WORKERS` | 2 |
+| `GLM_GPU_RESERVE_GIB` | 0.75 GiB at cache selection |
+| `GLM_RAM_RESERVE_GIB` | 1.25 GiB |
+| `GLM_DYNAMIC_GPU_RESERVE_GIB` | 0.125 GiB before verification rounds |
 
-[Raw report](benchmarks/rtx3080-glm53.json) includes checkpoint revision, hardware,
-software versions and cache counters. This short arithmetic prompt proves a real
-full-model response; it is not an evaluation of coding, long context, tool use or
-general model quality. The timing is not an upper bound on this hardware's speed.
+SSD testing measured 2.08 GB/s with two readers; four/eight were slower. MTP16/32
+and fully resident MTP did not consistently improve ordinary prompts. Large dynamic
+GPU reserves evicted useful weights. One count run had unexplained long pauses;
+its result is preserved without claiming a proven cause or cure.
 
 ## Checks
 
-CPU checks require no model or GPU dependencies:
-
 ```console
 python -m unittest discover -s tests -p "test_*.py" -v
-```
-
-CUDA checks require the installed environment:
-
-```console
 python -m tests.gpu_oracle
-python -m tests.real_matrix_oracle --model /path/to/downloaded/checkpoint
+python -m tests.real_matrix_oracle --model /path/to/checkpoint
+python -m tests.optimized_oracle --model E:\models\glm53-exl3
 ```
 
-The synthetic oracle covers FP16 and 3/5/6-bit EXL3, dense and routed/shared experts,
-shared DSA indexers, token/chunk prefill, GPU/RAM cache bounds and cleanup. Separate
-FP16 GEMMs can round differently from resident fused MoE kernels; the oracle bounds
-the difference and checks token choices in its short sequence. The real-matrix
-oracle checks selected 3/4/5-bit checkpoint matrices exactly against resident kernels.
-CPU CI does **not** imply CUDA inference has been tested on GitHub runners.
+The first command needs no model or GPU dependencies. CUDA checks need the installed
+environment; the optimized oracle requires Windows. It covers official chat templates,
+real expert outputs, prefetch/cache eviction and memory-pressure storage release.
+CPU CI is not GPU validation. Generated Python answers were checked syntactically,
+**never executed**.
 
-The portable package passed the local CUDA oracles, CPU checks and wheel build.
-Its attempted full-model reruns were interrupted due to another interactive engine
-occupying the same GPU; see [package validation](benchmarks/package-validation.json).
-The full-model timings above belong to the original adapter before packaging.
+## Scope and license
 
-## Scope and limitations
+Only `GlmMoeDsaForCausalLM` is accepted. GLM-5.3-Flash has a different architecture.
+One GPU, greedy text decoding; no API server, tool execution, vision or batching service.
+Loader patching is process-global; concurrent engines are unsupported. CUDA graphs
+and arenas are disabled to avoid retaining streamed pointers. CUDA rounding can vary
+with batch size; identical token IDs are not promised for every prompt. Internal APIs
+are pinned to ExLlamaV3 1.5.3. No clean second-machine installation is claimed.
 
-- One CUDA GPU and one engine per process; the loader patch is process-global and not thread-safe.
-- Only `GlmMoeDsaForCausalLM` is accepted. The verified checkpoint is full GLM-5.3;
-  GLM-5.3-Flash uses a different architecture and is not supported by this adapter.
-- Greedy text generation only; no sampling, API server, tool-call execution, vision or batching service.
-- CUDA graphs and load arenas are disabled to avoid retaining evicted weight pointers.
-- No MTP speculative decoding, even though the checkpoint includes an MTP layer.
-- Disk read volume can be large, especially during prefill. Expert caching,
-  prefetching and asynchronous overlap are future work.
-- Uses ExLlamaV3 internal APIs and is pinned to 1.5.3; other versions may break it.
-- The public Windows installer is provided for reproduction. It has not been
-  independently tested on a second clean PC.
-
-## Credits and license
-
-[ExLlamaV3](https://github.com/turboderp-org/exllamav3) by Turboderp provides the
-inference implementation. [WARP](https://github.com/sqliteai/warp) inspired the
-larger-than-RAM experiment. GLM comes from [Z.ai](https://github.com/zai-org/GLM-5);
-the verified weight edit is by dealignai and its EXL3 checkpoint by Infatoshi.
-This project is independent of those authors and projects.
-
-Adapter code: [MIT](LICENSE). No model weights, upstream binaries or credentials
-are distributed. Dependencies and model weights retain their own licenses; see
-[third-party notices](THIRD_PARTY_NOTICES.md) and the linked model card.
+Adapter: [MIT](LICENSE). No weights, upstream binaries or credentials are distributed.
+[ExLlamaV3](https://github.com/turboderp-org/exllamav3), [WARP](https://github.com/sqliteai/warp),
+[Z.ai](https://github.com/zai-org/GLM-5), dealignai and Infatoshi retain their credits
+and licenses; see [third-party notices](THIRD_PARTY_NOTICES.md). This project is independent.

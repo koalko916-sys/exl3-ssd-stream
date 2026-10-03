@@ -27,15 +27,13 @@ def parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--report", type=Path, default=Path("benchmark-exl3.json"))
     p.add_argument("--interactive", action="store_true")
-    p.add_argument(
-        "--optimized", action="store_true", help="Windows direct SSD I/O + verified MTP/lookup"
-    )
+    p.add_argument("--optimized", action="store_true")
     p.add_argument(
         "--mtp",
         type=int,
         choices=(0, 1, 2, 4, 8, 16, 32),
-        default=None,
-        help="Draft window in optimized mode (default: 8; 0 disables)",
+        default=8,
+        help="Verified MTP draft window; 0 disables",
     )
     return p
 
@@ -43,13 +41,6 @@ def parser() -> argparse.ArgumentParser:
 def main() -> None:
     p = parser()
     args = p.parse_args()
-    if args.optimized:
-        from .optimized.cli import main as optimized_main
-
-        optimized_main()
-        return
-    if args.mtp is not None:
-        p.error("--mtp requires --optimized")
     try:
         validate_generation(args.context, args.tokens)
         if not args.model.is_dir():
@@ -59,10 +50,25 @@ def main() -> None:
     except ValueError as error:
         p.error(str(error))
 
+    import sys
+
+    if sys.platform != "win32":
+        p.error(
+            "The optimized profile requires Windows; omit --optimized for the original adapter."
+        )
+    from .profile import apply_defaults
+
+    apply_defaults()
+
     from .runtime import StreamingEngine
 
     engine = StreamingEngine(args.model, args.context, args.cache_gib, args.host_cache_gib)
+    runner = engine
     try:
+        if args.mtp:
+            from .speculative import MTPRunner
+
+            runner = MTPRunner(engine, args.mtp)
         history = []
         while True:
             try:
@@ -77,7 +83,11 @@ def main() -> None:
             if not prompt:
                 continue
             try:
-                result = engine.generate(prompt, args.tokens, history=history)
+                print(
+                    "Processing request; large copied fragments are displayed after verification. Please wait.",
+                    flush=True,
+                )
+                result = runner.generate(prompt, args.tokens, history=history)
             except ValueError as error:
                 if not args.interactive:
                     raise
@@ -106,4 +116,6 @@ def main() -> None:
                 print(json.dumps(result, ensure_ascii=False, indent=2))
                 break
     finally:
+        if runner is not engine:
+            runner.close()
         engine.close()

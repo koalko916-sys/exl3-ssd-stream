@@ -1,0 +1,76 @@
+{
+  "created_utc": "2026-10-03T14:26:49.829412+00:00",
+  "package_version": "0.2.0",
+  "checks": {
+    "cpu_tests": {
+      "exit_code": 0,
+      "passed": true
+    },
+    "cli_help": {
+      "exit_code": 0,
+      "passed": true
+    },
+    "optimized_cuda_oracle": {
+      "exit_code": 0,
+      "passed": true
+    },
+    "numerical_core_ast_equivalence": {
+      "passed": true,
+      "files": [
+        "chat.py",
+        "direct_io.py",
+        "host_buffer.py",
+        "ngram.py",
+        "runtime.py",
+        "speculative.py",
+        "validation.py"
+      ],
+      "allowed_change": "Diagnostic backend labels only; comments/formatting ignored"
+    },
+    "measured_profile_defaults_identical": {
+      "passed": true
+    },
+    "ruff_lint_and_format": {
+      "passed": true
+    },
+    "wheel_build_and_source_contents": {
+      "passed": true,
+      "sha256": "d6e854b39495a45dce4a53fafadce3eb4700543075909857861585399f844632",
+      "bytes": 35642
+    }
+  },
+  "scope": "Existing Windows runtime, reference PC; no clean second-machine installation",
+  "generated_code_executed": false,
+  "full_model_rerun": {
+    "status": "interrupted",
+    "successful_response_claimed": false,
+    "reason": "A pre-existing user interactive GLM engine occupied the same GPU and RAM. The concurrent benchmark selected zero RAM cache and slowed down; only the publication benchmark was stopped.",
+    "user_interactive_engine_preserved": true,
+    "local_measured_full_model_runs": "optimization-round2.json contains successful independent local runs before public namespace packaging"
+  },
+  "source_sha256": {
+    "exl3_ssd_stream/__init__.py": "6a3760f4732734009c212252f9abad6573b42565e91f3bd7e335ffb4f9053fa9",
+    "exl3_ssd_stream/__main__.py": "6d8b7d7846a845059d7a3107143f11131f63c5511d669b44085b15ec5e3d2279",
+    "exl3_ssd_stream/cli.py": "43b25d2c3629f90324df4fdbb62f981898e08b9e2a0dbe593cdcb87b7fe07405",
+    "exl3_ssd_stream/optimized/__init__.py": "e0c1c44415f57425626ef9b33c65d2c360e8df73a6a981ca4c95b3a07c04a9c9",
+    "exl3_ssd_stream/optimized/__main__.py": "6d8b7d7846a845059d7a3107143f11131f63c5511d669b44085b15ec5e3d2279",
+    "exl3_ssd_stream/optimized/chat.py": "47525bcc27ba3f68a5272c8f89a3552ec107a2e9c5dd54a948dd9ed59f4b7d6d",
+    "exl3_ssd_stream/optimized/cli.py": "536bfc613f304b64d80ca9e28c770a495d56f6ee2469c74751577999d0dd0b67",
+    "exl3_ssd_stream/optimized/direct_io.py": "d91dfa592f4fe815d993018bb1f538bd8b45f4830ed7d24e25e8df3b2ae04eca",
+    "exl3_ssd_stream/optimized/host_buffer.py": "e84df0cd4ba43d0c81bd474aee6e76ea51764a56b8c391ff83f6e58d11a1db15",
+    "exl3_ssd_stream/optimized/ngram.py": "4f3747c3caad642b62890b97b8bf01b4341bd3d4746e343409bd082557e5c79f",
+    "exl3_ssd_stream/optimized/profile.py": "90c2249743f483e745b397ee8a3cf1a5045b0c6e7a3f5a00078276bd4c418ade",
+    "exl3_ssd_stream/optimized/runtime.py": "2ab8b6158e4baa501afe88e3bdb7ff7ce3d2405ce043243a34916e4a89e2346c",
+    "exl3_ssd_stream/optimized/speculative.py": "e8b06d14ff8b806bc4da0974582609f71fb95f4b3744033a51f90b4cc59ff4d9",
+    "exl3_ssd_stream/optimized/validation.py": "6262731cc21cf1e8811c92d8f43afb6fe59796488def94d78567d63ab0c21a96",
+    "exl3_ssd_stream/runtime.py": "b14bc32c6e592e016c53f6ab347194db9344517bccf244f17ad17c7773201077",
+    "exl3_ssd_stream/validation.py": "6262731cc21cf1e8811c92d8f43afb6fe59796488def94d78567d63ab0c21a96"
+  },
+  "software": {
+    "torch": "2.10.0+cu128",
+    "exllamav3": "1.5.3+cu128.torch2.10.0",
+    "transformers": "5.18.0",
+    "psutil": "7.2.2"
+  },
+  "status": "cpu_cuda_core_equivalence_and_build_passed; full_model_rerun_interrupted"
+}

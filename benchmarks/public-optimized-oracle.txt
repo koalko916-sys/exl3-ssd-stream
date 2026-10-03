@@ -1,0 +1,11 @@
+PASS: 12 official chat-template cases are byte-identical.
+PASS: ngram suffix, bounds and no-match cases.
+ !! Overriding model.layers.78.eh_proj.suh from <MODEL_DIR>\model-00038-of-00039.safetensors with <MODEL_DIR>\model-00039-of-00039.safetensors
+ !! Overriding model.layers.78.eh_proj.svh from <MODEL_DIR>\model-00038-of-00039.safetensors with <MODEL_DIR>\model-00039-of-00039.safetensors
+ !! Overriding model.layers.78.eh_proj.mul1 from <MODEL_DIR>\model-00038-of-00039.safetensors with <MODEL_DIR>\model-00039-of-00039.safetensors
+ !! Overriding model.layers.78.eh_proj.trellis from <MODEL_DIR>\model-00038-of-00039.safetensors with <MODEL_DIR>\model-00039-of-00039.safetensors
+ !! Overriding model.layers.78.enorm.weight from <MODEL_DIR>\model-00038-of-00039.safetensors with <MODEL_DIR>\model-00039-of-00039.safetensors
+ !! Overriding model.layers.78.hnorm.weight from <MODEL_DIR>\model-00038-of-00039.safetensors with <MODEL_DIR>\model-00039-of-00039.safetensors
+ !! Replaced 6 tensors from <MODEL_DIR>
+PASS: four-reader prefetch, dynamic cache hits and eviction; exact real expert outputs.
+PASS: RAM and GPU cache pressure releases backing storage; reloaded computation identical.

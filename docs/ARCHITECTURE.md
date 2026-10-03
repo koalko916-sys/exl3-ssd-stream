@@ -1,5 +1,10 @@
 # Loading architecture
 
+This section describes the original adapter, preserved as the default.
+Version 0.2 adds a separate Windows `--optimized` adapter with direct SSD I/O,
+embedding row reads, expert prefetch/cache and verified MTP/lookup.
+See [optimized architecture and verification](OPTIMIZATION.md).
+
 ```mermaid
 flowchart LR
     SSD[EXL3 checkpoint on SSD] --> Loader[ExLlamaV3 safetensor loader]
