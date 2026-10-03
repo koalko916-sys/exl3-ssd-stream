@@ -1,5 +1,7 @@
 # EXL3 SSD Stream
 
+[![CPU checks](https://github.com/koalko916-sys/exl3-ssd-stream/actions/workflows/checks.yml/badge.svg)](https://github.com/koalko916-sys/exl3-ssd-stream/actions/workflows/checks.yml)
+
 **Experimental:** run a GLM EXL3 checkpoint larger than RAM and VRAM by loading
 linear weights from an SSD on demand, using ExLlamaV3's CUDA kernels.
 
@@ -79,6 +81,12 @@ memory. Automatic reserves are heuristics, not an OOM guarantee. Explicit budget
 are useful when other applications occupy memory. Close large GPU applications
 before running. The reference run selected 4.90 GiB of GPU cache and zero RAM cache.
 
+Run only one model process on this GPU. During package validation, an already-open
+interactive GLM occupied about 8.3 GiB dedicated VRAM. Concurrent full-model reruns
+became much slower and were stopped; no throughput claim is made for them.
+Reducing the cache did not resolve that contention. Keep the GPU available for
+one engine before comparing timings.
+
 ## Actual result
 
 Prompt: `What is 2 + 2? Answer briefly.` Answer: `2 + 2 = 4`.
@@ -120,6 +128,11 @@ FP16 GEMMs can round differently from resident fused MoE kernels; the oracle bou
 the difference and checks token choices in its short sequence. The real-matrix
 oracle checks selected 3/4/5-bit checkpoint matrices exactly against resident kernels.
 CPU CI does **not** imply CUDA inference has been tested on GitHub runners.
+
+The portable package passed the local CUDA oracles, CPU checks and wheel build.
+Its attempted full-model reruns were interrupted due to another interactive engine
+occupying the same GPU; see [package validation](benchmarks/package-validation.json).
+The full-model timings above belong to the original adapter before packaging.
 
 ## Scope and limitations
 

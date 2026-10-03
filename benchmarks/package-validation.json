@@ -1,0 +1,32 @@
+{
+  "measured_on": "2026-10-03",
+  "package_version": "0.1.0",
+  "ruff_check": "passed",
+  "ruff_format": "passed",
+  "python_compileall": "passed",
+  "cpu_tests": {
+    "status": "passed",
+    "count": 4
+  },
+  "synthetic_cuda_oracle": "passed",
+  "real_checkpoint_matrix_cuda_oracle": "passed",
+  "wheel_build": "passed",
+  "cli_help": "passed",
+  "windows_installer_syntax": "passed",
+  "clean_machine_installer_test": "not_run",
+  "github_ci": {
+    "run_url": "https://github.com/koalko916-sys/exl3-ssd-stream/actions/runs/37087430351",
+    "status": "success",
+    "commit": "652fc44ce5d746f5b95dec0da900ce74e7746170"
+  },
+  "packaged_full_model_rerun": {
+    "status": "interrupted",
+    "reason": "An existing interactive GLM engine occupied approximately 8.3 GiB dedicated VRAM. Repeated benchmark processes competed with it and were stopped; the interactive engine was preserved."
+  },
+  "original_full_model_run": {
+    "report": "rtx3080-glm53.json",
+    "status": "passed",
+    "answer": "2 + 2 = 4",
+    "note": "Original adapter before portable packaging; original numeric measurements preserved."
+  }
+}

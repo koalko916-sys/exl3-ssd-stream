@@ -29,6 +29,15 @@ The original full-model run preceded portable packaging. The source adapter was
 preserved; packaging split out the CLI, removed local paths and added input checks.
 Additional package checks are recorded in `package-validation.json` after execution.
 
+The package passed the synthetic and real-matrix CUDA oracles, four CPU tests,
+lint/format/syntax checks, CLI help, wheel build and GitHub CPU CI. Full-model
+package reruns were interrupted when a separate interactive GLM was found using
+about 8.3 GiB dedicated VRAM on the same GPU. Reducing the test's cache did not
+resolve contention. The user's interactive process was kept running, and only
+the benchmark processes were stopped. No rerun throughput or successful package
+full-model response is claimed. The original full-model response remains the
+recorded evidence, with its provenance clearly identified.
+
 To contribute a result, include GPU/driver, CPU, RAM, storage, Python/PyTorch/ExLlama
 versions, model revision, flags, number of runs and prompt/output token counts.
 Redact local paths and do not submit credentials or private prompts.
