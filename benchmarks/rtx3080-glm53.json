@@ -1,0 +1,49 @@
+{
+  "prompt": "What is 2 + 2? Answer briefly.",
+  "text": "</think>2 + 2 = 4",
+  "generated_tokens": 8,
+  "answer": "2 + 2 = 4",
+  "finish_reason": "stop",
+  "prompt_tokens": 23,
+  "decode_seconds": 110.13405879999846,
+  "tokens_per_second": 0.07263874669803881,
+  "time_to_first_token_seconds": 155.70949180000025,
+  "total_seconds": 252.1062904999999,
+  "peak_vram_bytes": 9085246976,
+  "peak_reserved_vram_bytes": 9292480512,
+  "peak_ram_bytes": 3911282688,
+  "backend": "ExLlamaV3 1.5.3 + custom bounded SSD streaming adapter",
+  "weight_loads": 41055,
+  "weight_cache_hits": 3110,
+  "weight_cache_bytes": 5259288832,
+  "weight_cache_limit": 5260705792,
+  "weight_upload_bytes": 239332595200,
+  "host_weight_cache_bytes": 0,
+  "host_weight_cache_limit": 0,
+  "host_weight_cache_hits": 0,
+  "weight_load_seconds": 214.047,
+  "hardware": {
+    "gpu": "NVIDIA RTX 3080 10 GiB",
+    "cpu": "AMD Ryzen 5 7500F",
+    "ram_gib": 15.69,
+    "storage": "Kingston SNV2S1000G NVMe SSD",
+    "os": "Windows"
+  },
+  "environment": {
+    "python": "3.13.15",
+    "torch": "2.10.0+cu128",
+    "exllamav3": "1.5.3+cu128.torch2.10.0",
+    "driver": "610.74"
+  },
+  "model": {
+    "repo": "Infatoshi/GLM-5.3-UNCENSORED-EXL3-3.0bpw",
+    "revision": "d06b4f42db97c8bb7a8f72e819b979f132e4a721",
+    "checkpoint_bytes": 292765536740,
+    "architecture": "GlmMoeDsaForCausalLM"
+  },
+  "provenance": {
+    "measured_on": "2026-10-03",
+    "runs": 1,
+    "note": "Measured with the original adapter before portable packaging. The same runtime is used; package validation is recorded separately. Load time excluded; decoding includes the final EOS forward."
+  }
+}

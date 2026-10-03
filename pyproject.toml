@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=78.1.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "exl3-ssd-stream"
+version = "0.1.0"
+description = "Experimental bounded SSD streaming adapter for GLM EXL3 models on small CUDA GPUs"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{name = "koalko916-sys"}]
+dependencies = ["exllamav3==1.5.3", "transformers==5.18.0", "psutil==7.2.2"]
+
+[project.scripts]
+exl3-ssd-stream = "exl3_ssd_stream.cli:main"
+
+[project.urls]
+Repository = "https://github.com/koalko916-sys/exl3-ssd-stream"
+Issues = "https://github.com/koalko916-sys/exl3-ssd-stream/issues"
+
+[tool.setuptools.packages.find]
+include = ["exl3_ssd_stream*"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+
+[tool.ruff.lint.per-file-ignores]
+# Graph/arena flags must be set before ExLlamaV3 is imported.
+"exl3_ssd_stream/runtime.py" = ["E402"]
